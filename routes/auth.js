@@ -41,7 +41,7 @@ router.post('/login', async (req, res) => {
       staff: { id: staff.id, name: staff.name, email: staff.email, role: staff.role }
     });
   } catch (err) {
-    console.error('[AUTH/LOGIN]', err.message);
+    console.error('[AUTH/LOGIN]', err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
