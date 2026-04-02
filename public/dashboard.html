@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Staff Dashboard — School Result System</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { display: flex; flex-direction: column; min-height: 100vh; }
+
+    .dashboard-layout {
+      display: flex;
+      flex: 1;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 230px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 20px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      position: sticky;
+      top: 64px;
+      height: calc(100vh - 64px);
+      overflow-y: auto;
+    }
+    .sidebar-section-label {
+      font-size: .68rem;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--text-muted);
+      padding: 12px 12px 4px;
+      font-weight: 700;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: .875rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+    }
+    .nav-item:hover { background: var(--gold-pale); color: var(--text-primary); }
+    .nav-item.active {
+      background: linear-gradient(135deg, var(--gold-pale), var(--pink-pale));
+      color: var(--gold-dark);
+      font-weight: 600;
+      border: 1px solid rgba(212,175,55,.3);
+    }
+    .nav-item .nav-icon { font-size: 1rem; width: 20px; text-align: center; }
+
+    /* ── Main Content ── */
+    .main-content {
+      flex: 1;
+      padding: 28px;
+      max-width: calc(100% - 230px);
+      overflow-x: hidden;
+    }
+    .page-header {
+      margin-bottom: 24px;
+    }
+    .page-header h2 { margin-bottom: 4px; }
+
+    /* ── Dashboard Overview cards ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .stat-icon {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+    .stat-icon.gold { background: var(--gold-pale); }
+    .stat-icon.pink { background: var(--pink-pale); }
+    .stat-icon.green { background: #edf7ee; }
+    .stat-icon.blue  { background: #e3f2fd; }
+    .stat-value { font-family: var(--font-display); font-size: 1.6rem; color: var(--text-primary); line-height: 1; }
+    .stat-label { font-size: .78rem; color: var(--text-muted); margin-top: 2px; }
+
+    /* ── Student filter bar ── */
+    .filter-bar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      margin-bottom: 20px;
+    }
+    .filter-bar .form-group { flex: 1; min-width: 160px; max-width: 220px; }
+
+    /* ── Score entry table ── */
+    .score-table { width: 100%; border-collapse: collapse; }
+    .score-table th {
+      background: var(--surface-2);
+      padding: 9px 12px;
+      text-align: left;
+      font-size: .75rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    .score-table td { padding: 7px 12px; border-bottom: 1px solid var(--border); }
+    .score-table td:nth-child(2), .score-table td:nth-child(3) { width: 110px; }
+    .score-table td:nth-child(4), .score-table td:nth-child(5) { width: 80px; }
+    .score-table .form-control { padding: 6px 10px; font-size: .875rem; }
+    .total-cell { font-weight: 700; color: var(--gold-dark); }
+
+    /* ── PIN card ── */
+    .pin-list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 8px;
+      background: var(--surface);
+      gap: 12px;
+    }
+    .pin-list-item:hover { border-color: var(--gold-light); background: var(--gold-pale); }
+    .pin-list-code {
+      font-family: 'Courier New', monospace;
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--gold-dark);
+      letter-spacing: .1em;
+    }
+    .pin-list-info { font-size: .78rem; color: var(--text-muted); }
+
+    /* ── ADD STAFF ── */
+    .staff-notice {
+      background: var(--gold-pale);
+      border: 1px solid var(--gold-light);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      font-size: .875rem;
+      color: var(--gold-dark);
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .main-content { max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <!-- ══ TOP BAR ════════════════════════════════════════════ -->
+  <header class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-logo">🏫</div>
+      <div class="topbar-title">
+        SchoolResult MS
+        <span>Staff Dashboard</span>
+      </div>
+    </div>
+    <div class="topbar-nav">
+      <div class="topbar-user">
+        <div class="topbar-avatar" id="staffInitials">?</div>
+        <span id="staffName" style="font-weight:600;"></span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="logout()" style="margin-left:8px;">Sign Out</button>
+    </div>
+  </header>
+
+  <div class="dashboard-layout">
+    <!-- ══ SIDEBAR ══════════════════════════════════════════ -->
+    <aside class="sidebar">
+      <div class="sidebar-section-label">Main</div>
+      <button class="nav-item active" data-page="overview" onclick="showPage('overview', this)">
+        <span class="nav-icon">📊</span> Overview
+      </button>
+      <button class="nav-item" data-page="students" onclick="showPage('students', this)">
+        <span class="nav-icon">👥</span> Students
+      </button>
+
+      <div class="sidebar-section-label">Results</div>
+      <button class="nav-item" data-page="enter-results" onclick="showPage('enter-results', this)">
+        <span class="nav-icon">✏️</span> Enter Results
+      </button>
+      <button class="nav-item" data-page="manage-results" onclick="showPage('manage-results', this)">
+        <span class="nav-icon">📝</span> Manage Results
+      </button>
+
+      <div class="sidebar-section-label">PINs</div>
+      <button class="nav-item" data-page="generate-pin" onclick="showPage('generate-pin', this)">
+        <span class="nav-icon">🔑</span> Generate PIN
+      </button>
+      <button class="nav-item" data-page="pin-list" onclick="showPage('pin-list', this)">
+        <span class="nav-icon">📋</span> All PINs
+      </button>
+
+      <div class="sidebar-section-label">Settings</div>
+      <button class="nav-item" data-page="subjects" onclick="showPage('subjects', this)">
+        <span class="nav-icon">📚</span> Manage Subjects
+      </button>
+
+      <div class="sidebar-section-label" id="sidebar-staff-section" style="display:none;">Staff</div>
+      <button class="nav-item" id="sidebar-staff-btn" data-page="manage-staff" onclick="showPage('manage-staff', this)" style="display:none;">
+        <span class="nav-icon">👥</span> Manage Staff
+      </button>
+      <hr class="gold-rule" style="margin:12px 0;">
+      <a href="/" class="nav-item" style="text-decoration:none;">
+        <span class="nav-icon">🔍</span> Result Checker
+      </a>
+    </aside>
+
+    <!-- ══ MAIN CONTENT ══════════════════════════════════════ -->
+    <main class="main-content">
+
+      <!-- ▸ OVERVIEW PAGE ─────────────────────────────────── -->
+      <div id="page-overview" class="page-section">
+        <div class="page-header">
+          <h2>Dashboard Overview</h2>
+          <p>Welcome back. Here's a snapshot of the system.</p>
+        </div>
+
+        <div class="stats-grid" id="statsGrid">
+          <div class="stat-card">
+            <div class="stat-icon gold">👥</div>
+            <div>
+              <div class="stat-value" id="statStudents">—</div>
+              <div class="stat-label">Total Students</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon pink">📝</div>
+            <div>
+              <div class="stat-value" id="statResults">—</div>
+              <div class="stat-label">Result Entries</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">🔑</div>
+            <div>
+              <div class="stat-value" id="statPins">—</div>
+              <div class="stat-label">PINs Generated</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon blue">✅</div>
+            <div>
+              <div class="stat-value" id="statPublished">—</div>
+              <div class="stat-label">Published Results</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Quick Actions</div>
+          <div class="d-flex gap-12" style="flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="showPage('students', document.querySelector('[data-page=students]'))">
+              ➕ Add Student
+            </button>
+            <button class="btn btn-pink" onclick="showPage('enter-results', document.querySelector('[data-page=enter-results]'))">
+              ✏️ Enter Results
+            </button>
+            <button class="btn btn-outline" onclick="showPage('generate-pin', document.querySelector('[data-page=generate-pin]'))">
+              🔑 Generate PIN
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ▸ STUDENTS PAGE ─────────────────────────────────── -->
+      <div id="page-students" class="page-section hidden">
+        <div class="page-header d-flex justify-between align-center">
+          <div>
+            <h2>Student Management</h2>
+            <p>Add and manage student records.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openAddStudentModal()">➕ Add Student</button>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+          <div class="form-group">
+            <label class="form-label">Filter by Class</label>
+            <select class="form-control" id="filterClass" onchange="loadStudents()">
+              <option value="">All Classes</option>
+              <option>PRI1</option><option>PRI2</option><option>PRI3</option>
+              <option>PRI4</option><option>PRI5</option><option>PRI6</option>
+              <option>JSS1</option><option>JSS2</option><option>JSS3</option>
+              <option>SS1</option><option>SS2</option><option>SS3</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:2;max-width:340px;">
+            <label class="form-label">Search</label>
+            <input type="text" class="form-control" id="searchStudents" placeholder="Search by name or code…" oninput="debounceSearch()">
+          </div>
+          <button class="btn btn-ghost" onclick="loadStudents()">🔍 Search</button>
+        </div>
+
+        <div class="card" style="padding:0;">
+          <div id="studentsTableWrapper" class="table-wrapper">
+            <div class="loading-overlay"><span class="spinner"></span> Loading students…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ▸ ENTER RESULTS PAGE ─────────────────────────────── -->
+      <div id="page-enter-results" class="page-section hidden">
+        <div class="page-header">
+          <h2>Enter Results</h2>
+          <p>Select a student, term and session, then enter scores.</p>
+        </div>
+
+        <div class="card mb-16">
+          <div class="card-title">Step 1 — Select Student & Term</div>
+          <div class="form-row cols-3">
+            <div class="form-group">
+              <label class="form-label">Class</label>
+              <select class="form-control" id="er_class" onchange="onErClassChange()">
+                <option value="">— Select Class —</option>
+                <option>PRI1</option><option>PRI2</option><option>PRI3</option>
+                <option>PRI4</option><option>PRI5</option><option>PRI6</option>
+                <option>JSS1</option><option>JSS2</option><option>JSS3</option>
+                <option>SS1</option><option>SS2</option><option>SS3</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Student</label>
+              <select class="form-control" id="er_student" onchange="onErStudentChange()">
+                <option value="">— Select Class First —</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Term</label>
+              <select class="form-control" id="er_term">
+                <option>First</option><option>Second</option><option>Third</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row cols-2 mt-12">
+            <div class="form-group">
+              <label class="form-label">Session (e.g. 2024/2025)</label>
+              <input type="text" class="form-control" id="er_session" placeholder="2024/2025" value="">
+            </div>
+            <div class="form-group" style="justify-content:flex-end;">
+              <label class="form-label">&nbsp;</label>
+              <button class="btn btn-primary" onclick="loadSubjectsForEntry()">Load Subjects →</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="er_subjects_section" class="hidden">
+          <div class="card" style="padding:0;">
+            <div style="padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
+              <div class="card-title" style="margin:0;">Step 2 — Enter Scores</div>
+              <div style="font-size:.8rem;color:var(--text-muted);">CA: max 40 pts &nbsp;|&nbsp; Exam: max 60 pts</div>
+            </div>
+            <div style="overflow-x:auto;">
+              <table class="score-table" id="scoreTable">
+                <thead>
+                  <tr>
+                    <th>Subject</th>
+                    <th>CA Score <small>(max 40)</small></th>
+                    <th>Exam Score <small>(max 60)</small></th>
+                    <th>Total</th>
+                    <th>Grade</th>
+                  </tr>
+                </thead>
+                <tbody id="scoreTableBody"></tbody>
+              </table>
+            </div>
+            <div style="padding:16px 20px; border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end;">
+              <button class="btn btn-ghost" onclick="clearScores()">Clear All</button>
+              <button class="btn btn-primary btn-lg" id="saveResultsBtn" onclick="saveResults()">
+                💾 Save Results
+              </button>
+            </div>
+          </div>
+          <div id="er_message" class="mt-12"></div>
+        </div>
+      </div>
+
+      <!-- ▸ MANAGE RESULTS PAGE ──────────────────────────────── -->
+      <div id="page-manage-results" class="page-section hidden">
+        <div class="page-header">
+          <h2>Manage Results</h2>
+          <p>View and edit existing results before publishing.</p>
+        </div>
+
+        <div class="card mb-16">
+          <div class="card-title">Search Results</div>
+          <div class="form-row cols-3">
+            <div class="form-group">
+              <label class="form-label">Class</label>
+              <select class="form-control" id="mr_class" onchange="onMrClassChange()">
+                <option value="">— Select Class —</option>
+                <option>PRI1</option><option>PRI2</option><option>PRI3</option>
+                <option>PRI4</option><option>PRI5</option><option>PRI6</option>
+                <option>JSS1</option><option>JSS2</option><option>JSS3</option>
+                <option>SS1</option><option>SS2</option><option>SS3</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Student</label>
+              <select class="form-control" id="mr_student">
+                <option value="">— Select Class First —</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Term</label>
+              <select class="form-control" id="mr_term">
+                <option>First</option><option>Second</option><option>Third</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row cols-2 mt-12">
+            <div class="form-group">
+              <label class="form-label">Session</label>
+              <input type="text" class="form-control" id="mr_session" placeholder="2024/2025">
+            </div>
+            <div class="form-group">
+              <label class="form-label">&nbsp;</label>
+              <button class="btn btn-outline" onclick="loadExistingResults()">🔍 Load Results</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="mr_results_section" class="hidden">
+          <div class="card" style="padding:0;">
+            <div id="mr_tableWrapper"></div>
+          </div>
+          <div id="mr_message" class="mt-12"></div>
+        </div>
+      </div>
+
+      <!-- ▸ GENERATE PIN PAGE ──────────────────────────────── -->
+      <div id="page-generate-pin" class="page-section hidden">
+        <div class="page-header">
+          <h2>Generate Result PIN</h2>
+          <p>Generate a unique PIN to share with students/parents after entering results.</p>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:start;">
+          <div class="card">
+            <div class="card-title">PIN Details</div>
+            <div class="form-row" style="gap:16px;">
+              <div class="form-group">
+                <label class="form-label">Class</label>
+                <select class="form-control" id="gp_class" onchange="onGpClassChange()">
+                  <option value="">— Select Class —</option>
+                  <option>PRI1</option><option>PRI2</option><option>PRI3</option>
+                  <option>PRI4</option><option>PRI5</option><option>PRI6</option>
+                  <option>JSS1</option><option>JSS2</option><option>JSS3</option>
+                  <option>SS1</option><option>SS2</option><option>SS3</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Student</label>
+                <select class="form-control" id="gp_student">
+                  <option value="">— Select Class First —</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Term</label>
+                <select class="form-control" id="gp_term">
+                  <option>First</option><option>Second</option><option>Third</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Session</label>
+                <input type="text" class="form-control" id="gp_session" placeholder="2024/2025">
+              </div>
+            </div>
+            <button class="btn btn-pink btn-block mt-16" onclick="generatePin()">
+              🔑 Generate PIN
+            </button>
+            <div id="gp_message" class="mt-12"></div>
+          </div>
+
+          <div id="gp_pin_display" class="hidden animate-in">
+            <div class="pin-display">
+              <div class="pin-label">Result Access PIN</div>
+              <div class="pin-code" id="gp_pin_code">—</div>
+              <div class="pin-label" id="gp_pin_meta"></div>
+              <button class="btn btn-primary btn-sm mt-12" onclick="copyPin()">📋 Copy PIN</button>
+            </div>
+            <div class="card mt-16" style="padding:16px;">
+              <div style="font-size:.82rem; color:var(--text-secondary); line-height:1.7;">
+                <strong>📌 Instructions for Parent/Student:</strong><br>
+                1. Visit the Result Checker page<br>
+                2. Enter the student's name and class<br>
+                3. Enter this PIN to view results
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ▸ PIN LIST PAGE ──────────────────────────────────── -->
+      <div id="page-pin-list" class="page-section hidden">
+        <div class="page-header">
+          <h2>All Generated PINs</h2>
+          <p>View all result PINs and their status.</p>
+        </div>
+        <div class="card" style="padding:0;">
+          <div id="pinListWrapper" class="table-wrapper">
+            <div class="loading-overlay"><span class="spinner"></span> Loading…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ▸ ADD STAFF PAGE ─────────────────────────────────── -->
+
+      <!-- ▸ SUBJECTS PAGE ──────────────────────────────────── -->
+      <div id="page-subjects" class="page-section hidden">
+        <div class="page-header d-flex justify-between align-center">
+          <div>
+            <h2>Manage Subjects</h2>
+            <p>Add, edit or delete subjects available for result entry.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openSubjectModal()">➕ Add Subject</button>
+        </div>
+
+        <div class="card" style="padding:0;margin-bottom:20px;">
+          <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <span class="badge badge-gold">all — Every level</span>
+            <span class="badge badge-pink">primary — PRI1–PRI6</span>
+            <span class="badge badge-grey">junior — JSS1–JSS3</span>
+            <span class="badge" style="background:#e3f2fd;color:#1565c0;border:1px solid #90caf9;">senior — SS1–SS3</span>
+            <span style="font-size:.78rem;color:var(--text-muted);margin-left:auto;">Subjects are filtered automatically when entering results.</span>
+          </div>
+          <div id="subjectsTableWrapper" class="table-wrapper">
+            <div class="loading-overlay"><span class="spinner"></span> Loading subjects…</div>
+          </div>
+        </div>
+        <div id="subjects-message"></div>
+      </div>
+      <!-- ▸ MANAGE STAFF PAGE (ADMIN ONLY) ──────────────────── -->
+      <div id="page-manage-staff" class="page-section hidden">
+        <div class="page-header d-flex justify-between align-center">
+          <div>
+            <h2>Manage Staff</h2>
+            <p>Create, edit or remove staff accounts. Admin eyes only.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openStaffModal()">➕ Add Staff</button>
+        </div>
+
+        <div class="card" style="padding:0;margin-bottom:16px;">
+          <div style="padding:12px 20px;background:linear-gradient(135deg,rgba(212,175,55,.1),rgba(255,105,180,.07));border-bottom:1px solid var(--border);font-size:.82rem;color:var(--gold-dark);">
+            🔐 Only admins can see this page. Staff members cannot access it.
+          </div>
+          <div id="staffTableWrapper" class="table-wrapper">
+            <div class="loading-overlay"><span class="spinner"></span> Loading staff…</div>
+          </div>
+        </div>
+        <div id="staff-page-message"></div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ══ ADD STUDENT MODAL ══════════════════════════════════ -->
+  <div class="modal-overlay" id="addStudentModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Add New Student</div>
+        <button class="modal-close" onclick="closeModal('addStudentModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="addStudentMsg"></div>
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div class="form-row cols-2">
+            <div class="form-group">
+              <label class="form-label">First Name *</label>
+              <input type="text" class="form-control" id="as_first" placeholder="e.g. Chinwe">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Middle Name</label>
+              <input type="text" class="form-control" id="as_middle" placeholder="Optional">
+            </div>
+          </div>
+          <div class="form-row cols-2">
+            <div class="form-group">
+              <label class="form-label">Last Name *</label>
+              <input type="text" class="form-control" id="as_last" placeholder="e.g. Okafor">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Class *</label>
+              <select class="form-control" id="as_class">
+                <option value="">— Select Class —</option>
+                <option>PRI1</option><option>PRI2</option><option>PRI3</option>
+                <option>PRI4</option><option>PRI5</option><option>PRI6</option>
+                <option>JSS1</option><option>JSS2</option><option>JSS3</option>
+                <option>SS1</option><option>SS2</option><option>SS3</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('addStudentModal')">Cancel</button>
+        <button class="btn btn-primary" id="addStudentBtn" onclick="addStudent()">➕ Add Student</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══ SUBJECT MODAL ══════════════════════════════════════ -->
+  <div class="modal-overlay" id="subjectModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="subjectModalTitle">Add Subject</div>
+        <button class="modal-close" onclick="closeModal('subjectModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="subjectModalMsg"></div>
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div class="form-group">
+            <label class="form-label">Subject Name *</label>
+            <input type="text" class="form-control" id="sub_name" placeholder="e.g. Agricultural Science">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Level / Category *</label>
+            <select class="form-control" id="sub_category">
+              <option value="all">All Levels (Primary + JSS + SS)</option>
+              <option value="primary">Primary Only (PRI1–PRI6)</option>
+              <option value="junior">Junior Secondary Only (JSS1–JSS3)</option>
+              <option value="senior">Senior Secondary Only (SS1–SS3)</option>
+            </select>
+            <div class="text-sm text-muted mt-8">This controls which classes see this subject during result entry.</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('subjectModal')">Cancel</button>
+        <button class="btn btn-primary" id="subjectModalBtn" onclick="submitSubjectModal()">➕ Add Subject</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══ STAFF MODAL (ADMIN ONLY) ═══════════════════════════ -->
+  <div class="modal-overlay" id="staffModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="staffModalTitle">Add Staff Member</div>
+        <button class="modal-close" onclick="closeModal('staffModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="staffModalMsg"></div>
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div class="form-row cols-2">
+            <div class="form-group">
+              <label class="form-label">Full Name *</label>
+              <input type="text" class="form-control" id="stf_name" placeholder="e.g. Mrs. Adaeze Nwosu">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Role *</label>
+              <select class="form-control" id="stf_role">
+                <option value="staff">Staff</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address *</label>
+            <input type="email" class="form-control" id="stf_email" placeholder="teacher@school.edu">
+          </div>
+          <div class="form-group">
+            <label class="form-label" id="stf_password_label">Password *</label>
+            <input type="password" class="form-control" id="stf_password" placeholder="Min. 8 characters">
+            <div class="text-sm text-muted mt-8" id="stf_password_hint"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('staffModal')">Cancel</button>
+        <button class="btn btn-primary" id="staffModalBtn">➕ Create Account</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>

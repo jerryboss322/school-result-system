@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Check Result — School Result System</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 80% 10%, rgba(212,175,55,.15) 0%, transparent 55%),
+        radial-gradient(ellipse at 10% 80%, rgba(255,105,180,.12) 0%, transparent 55%),
+        var(--bg);
+    }
+
+    /* ── Header ── */
+    .site-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 62px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .site-brand { display: flex; align-items: center; gap: 12px; }
+    .site-logo {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, var(--gold), var(--pink));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+    }
+    .site-title {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      color: var(--text-primary);
+    }
+    .site-title span { display: block; font-family: var(--font-body); font-size: .7rem; color: var(--text-muted); font-weight: 400; }
+
+    /* ── Hero ── */
+    .hero {
+      text-align: center;
+      padding: 64px 20px 40px;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(135deg, var(--gold-pale), var(--pink-pale));
+      border: 1px solid var(--gold-light);
+      border-radius: 100px;
+      padding: 6px 16px;
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--gold-dark);
+      margin-bottom: 20px;
+      letter-spacing: .04em;
+    }
+    .hero h1 {
+      max-width: 520px;
+      margin: 0 auto 12px;
+      background: linear-gradient(135deg, var(--gold-dark) 20%, var(--pink-dark) 80%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: 1rem;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    /* ── Checker Card ── */
+    .checker-card {
+      max-width: 480px;
+      margin: 0 auto 60px;
+      padding: 0 20px;
+    }
+    .checker-form-card {
+      background: var(--surface);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+    }
+    .checker-form-header {
+      background: linear-gradient(135deg, rgba(212,175,55,.12), rgba(255,105,180,.08));
+      padding: 20px 28px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .checker-form-header h3 { font-size: 1.05rem; margin: 0; }
+    .checker-form-header-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--gold), var(--pink));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .checker-form-body {
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .checker-submit {
+      margin-top: 4px;
+      position: relative;
+    }
+    .checker-submit.loading .btn-text { opacity: 0; }
+    .checker-submit.loading::after {
+      content: '';
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%,-50%);
+      width: 20px; height: 20px;
+      border: 2.5px solid rgba(0,0,0,.2);
+      border-top-color: #1a1100;
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+    }
+
+    /* ── Result Sheet ── */
+    #resultSection { max-width: 700px; margin: 0 auto 60px; padding: 0 20px; }
+
+    .result-table-wrapper { overflow-x: auto; }
+    .result-table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+    .result-table th {
+      background: var(--gold-pale);
+      padding: 10px 14px;
+      text-align: left;
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--gold-dark);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      border-bottom: 2px solid var(--gold-light);
+    }
+    .result-table td {
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .result-table tr:last-child td { border-bottom: none; }
+    .result-table tr:hover { background: var(--gold-pale); }
+
+    .total-row td {
+      background: var(--surface-2);
+      font-weight: 700;
+      border-top: 2px solid var(--gold-light) !important;
+    }
+
+    /* Decorative lines */
+    .deco-line {
+      height: 4px;
+      background: linear-gradient(to right, var(--gold), var(--pink), var(--gold));
+      border-radius: 2px;
+    }
+
+    /* How it works section */
+    .how-it-works {
+      max-width: 600px;
+      margin: 0 auto 60px;
+      padding: 0 20px;
+    }
+    .how-steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 20px;
+    }
+    .how-step {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px 16px;
+      text-align: center;
+    }
+    .how-step-num {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--gold), var(--pink));
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 10px;
+      font-size: .8rem; font-weight: 700; color: #fff;
+    }
+    .how-step-icon { font-size: 1.4rem; margin-bottom: 8px; }
+    .how-step h4   { font-family: var(--font-body); font-size: .85rem; font-weight: 600; }
+    .how-step p    { font-size: .75rem; margin-top: 4px; }
+
+    /* Staff link strip */
+    .staff-strip {
+      background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    .staff-strip p { color: rgba(255,255,255,.9); font-size: .85rem; margin: 0; }
+    .staff-strip a { color: #fff; font-weight: 700; text-decoration: underline; }
+
+    @media print {
+      .site-header, .hero, .checker-card, .how-it-works, .staff-strip { display: none; }
+      #resultSection { margin: 0; padding: 0; max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Site Header ───────────────────────────────── -->
+  <header class="site-header">
+    <div class="site-brand">
+      <div class="site-logo">🏫</div>
+      <div class="site-title">
+        School Result System
+        <span>Academic Result Portal</span>
+      </div>
+    </div>
+    <div>
+      <a href="/login" class="btn btn-outline btn-sm">Staff Login →</a>
+    </div>
+  </header>
+
+  <!-- ── Hero ──────────────────────────────────────── -->
+  <div class="hero">
+    <div class="hero-badge">🎓 Academic Results Portal</div>
+    <h1>Check Your School Result</h1>
+    <p>Enter your details and PIN to instantly view your academic results.</p>
+  </div>
+
+  <!-- ── Checker Form ───────────────────────────────── -->
+  <div class="checker-card" id="checkerCard">
+    <div class="checker-form-card">
+      <div class="checker-form-header">
+        <div class="checker-form-header-icon">🔍</div>
+        <h3>Result Lookup</h3>
+      </div>
+      <div class="checker-form-body">
+        <div id="checker-error" class="alert alert-error hidden" role="alert"></div>
+
+        <div class="form-row cols-2">
+          <div class="form-group">
+            <label class="form-label">First Name</label>
+            <input type="text" class="form-control" id="c_first" placeholder="e.g. Chinwe" autocomplete="given-name">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name</label>
+            <input type="text" class="form-control" id="c_last" placeholder="e.g. Okafor" autocomplete="family-name">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Class</label>
+          <select class="form-control" id="c_class">
+            <option value="">— Select your class —</option>
+            <optgroup label="Primary">
+              <option>PRI1</option><option>PRI2</option><option>PRI3</option>
+              <option>PRI4</option><option>PRI5</option><option>PRI6</option>
+            </optgroup>
+            <optgroup label="Junior Secondary">
+              <option>JSS1</option><option>JSS2</option><option>JSS3</option>
+            </optgroup>
+            <optgroup label="Senior Secondary">
+              <option>SS1</option><option>SS2</option><option>SS3</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Result PIN</label>
+          <input type="text" class="form-control" id="c_pin"
+            placeholder="e.g. RSP-XXXXXXXX"
+            style="font-family:monospace;font-size:1rem;letter-spacing:.05em;text-transform:uppercase;"
+            oninput="this.value = this.value.toUpperCase()">
+          <div class="text-sm text-muted mt-8">
+            Your PIN was given to you by your school.
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-lg btn-block checker-submit" id="checkBtn" onclick="checkResult()">
+          <span class="btn-text">🔍 Check My Result</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Result Section ─────────────────────────────── -->
+  <div id="resultSection" class="hidden">
+    <div class="result-sheet animate-in">
+      <!-- Header Bar -->
+      <div class="deco-line"></div>
+      <div class="result-header">
+        <h2 id="res_school">School Result Management System</h2>
+        <p id="res_term_session"></p>
+        <p style="margin-top:6px;font-size:.8rem;">OFFICIAL ACADEMIC RESULT SHEET</p>
+      </div>
+
+      <!-- Student Info Strip -->
+      <div class="result-student-info">
+        <div class="result-info-item">
+          <div class="result-info-label">Student Name</div>
+          <div class="result-info-value" id="res_name"></div>
+        </div>
+        <div class="result-info-item">
+          <div class="result-info-label">Class</div>
+          <div class="result-info-value" id="res_class"></div>
+        </div>
+        <div class="result-info-item">
+          <div class="result-info-label">Student Code</div>
+          <div class="result-info-value" id="res_code"></div>
+        </div>
+      </div>
+
+      <!-- Subjects Table -->
+      <div class="result-table-wrapper" style="padding:0;">
+        <table class="result-table">
+          <thead>
+            <tr>
+              <th>Subject</th>
+              <th style="text-align:center;">CA <small>(40)</small></th>
+              <th style="text-align:center;">Exam <small>(60)</small></th>
+              <th style="text-align:center;">Total <small>(100)</small></th>
+              <th style="text-align:center;">Grade</th>
+              <th>Remark</th>
+            </tr>
+          </thead>
+          <tbody id="res_tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Summary Bar -->
+      <div class="result-summary-bar">
+        <div class="summary-item">
+          <div class="summary-value" id="res_avg">—</div>
+          <div class="summary-label">Average Score</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-value" id="res_total">—</div>
+          <div class="summary-label">Total Score</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-value" id="res_overall_grade">—</div>
+          <div class="summary-label">Overall Grade</div>
+        </div>
+      </div>
+      <div class="deco-line"></div>
+    </div>
+
+    <!-- Actions -->
+    <div class="d-flex gap-12 justify-between align-center mt-16 no-print">
+      <button class="btn btn-ghost" onclick="resetChecker()">← Check Another Result</button>
+      <button class="btn btn-primary" onclick="window.print()">🖨 Print Result</button>
+    </div>
+  </div>
+
+  <!-- ── How it Works ───────────────────────────────── -->
+  <div class="how-it-works no-print" id="howItWorks">
+    <h3 style="text-align:center;font-family:var(--font-display);">How It Works</h3>
+    <div class="how-steps">
+      <div class="how-step">
+        <div class="how-step-icon">📋</div>
+        <h4>Get Your PIN</h4>
+        <p>Collect your result PIN from your class teacher or school office.</p>
+      </div>
+      <div class="how-step">
+        <div class="how-step-icon">📝</div>
+        <h4>Enter Details</h4>
+        <p>Type your full name, class and the PIN in the form above.</p>
+      </div>
+      <div class="how-step">
+        <div class="how-step-icon">✅</div>
+        <h4>View Result</h4>
+        <p>Your complete result sheet is displayed instantly. You can print it!</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Grade Key ──────────────────────────────────── -->
+  <div style="max-width:500px;margin:0 auto 48px;padding:0 20px;" class="no-print">
+    <div class="card">
+      <div class="card-title">Grading Scale</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+        <div style="text-align:center;padding:8px;background:var(--surface-2);border-radius:8px;">
+          <span class="badge" style="background:#e8f5e9;color:#2e7d32;border:none;font-size:.85rem;">A</span>
+          <div style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">70–100 · Excellent</div>
+        </div>
+        <div style="text-align:center;padding:8px;background:var(--surface-2);border-radius:8px;">
+          <span class="badge" style="background:#e3f2fd;color:#1565c0;border:none;font-size:.85rem;">B</span>
+          <div style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">60–69 · Very Good</div>
+        </div>
+        <div style="text-align:center;padding:8px;background:var(--surface-2);border-radius:8px;">
+          <span class="badge" style="background:#fff3e0;color:#e65100;border:none;font-size:.85rem;">C</span>
+          <div style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">50–59 · Good</div>
+        </div>
+        <div style="text-align:center;padding:8px;background:var(--surface-2);border-radius:8px;">
+          <span class="badge" style="background:#fce4ec;color:#c62828;border:none;font-size:.85rem;">D</span>
+          <div style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">45–49 · Pass</div>
+        </div>
+        <div style="text-align:center;padding:8px;background:var(--surface-2);border-radius:8px;">
+          <span class="badge" style="background:#f3e5f5;color:#6a1b9a;border:none;font-size:.85rem;">E</span>
+          <div style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">40–44 · Below Avg</div>
+        </div>
+        <div style="text-align:center;padding:8px;background:var(--surface-2);border-radius:8px;">
+          <span class="badge" style="background:#fdeaea;color:#b71c1c;border:none;font-size:.85rem;">F</span>
+          <div style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">0–39 · Fail</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Staff Strip ────────────────────────────────── -->
+  <div class="staff-strip no-print">
+    <p>Are you a staff member? <a href="/login">Login to the Staff Portal →</a></p>
+  </div>
+
+  <script>
+    async function checkResult() {
+      const firstName = document.getElementById('c_first').value.trim();
+      const lastName  = document.getElementById('c_last').value.trim();
+      const cls       = document.getElementById('c_class').value;
+      const pin       = document.getElementById('c_pin').value.trim().toUpperCase();
+      const errBox    = document.getElementById('checker-error');
+      const btn       = document.getElementById('checkBtn');
+
+      errBox.classList.add('hidden');
+
+      if (!firstName || !lastName || !cls || !pin) {
+        errBox.textContent = '⚠ Please fill in all fields.';
+        errBox.classList.remove('hidden');
+        return;
+      }
+
+      btn.classList.add('loading');
+      btn.disabled = true;
+
+      try {
+        const res  = await fetch('/api/pins/check', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ first_name: firstName, last_name: lastName, class: cls, pin })
+        });
+        const data = await res.json();
+
+        if (!data.success) {
+          errBox.textContent = '⚠ ' + data.message;
+          errBox.classList.remove('hidden');
+          btn.classList.remove('loading');
+          btn.disabled = false;
+          return;
+        }
+
+        renderResult(data);
+      } catch(e) {
+        errBox.textContent = '⚠ Connection error. Please try again.';
+        errBox.classList.remove('hidden');
+      } finally {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+      }
+    }
+
+    function renderResult(data) {
+      // Update result sheet fields
+      document.getElementById('res_term_session').textContent =
+        `${data.term} Term — ${data.session} Academic Session`;
+      document.getElementById('res_name').textContent    = data.student.name;
+      document.getElementById('res_class').textContent   = data.student.class;
+      document.getElementById('res_code').textContent    = data.student.student_code;
+      document.getElementById('res_avg').textContent     = data.summary.average;
+      document.getElementById('res_total').textContent   = data.summary.total_score;
+      document.getElementById('res_overall_grade').textContent = data.summary.overall_grade;
+
+      // Build result rows
+      const grades = {A:'background:#e8f5e9;color:#2e7d32;',B:'background:#e3f2fd;color:#1565c0;',C:'background:#fff3e0;color:#e65100;',D:'background:#fce4ec;color:#c62828;',E:'background:#f3e5f5;color:#6a1b9a;',F:'background:#fdeaea;color:#b71c1c;'};
+
+      document.getElementById('res_tbody').innerHTML = data.results.map(r => `
+        <tr>
+          <td><strong>${r.subject}</strong></td>
+          <td style="text-align:center;">${parseFloat(r.ca_score).toFixed(1)}</td>
+          <td style="text-align:center;">${parseFloat(r.exam_score).toFixed(1)}</td>
+          <td style="text-align:center;font-weight:700;">${parseFloat(r.total).toFixed(1)}</td>
+          <td style="text-align:center;">
+            <span style="display:inline-block;padding:2px 10px;border-radius:100px;font-size:.78rem;font-weight:700;${grades[r.grade]||''}">
+              ${r.grade}
+            </span>
+          </td>
+          <td style="color:var(--text-secondary);">${r.remark}</td>
+        </tr>
+      `).join('');
+
+      // Show result, hide form
+      document.getElementById('checkerCard').classList.add('hidden');
+      document.getElementById('howItWorks').classList.add('hidden');
+      document.getElementById('resultSection').classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetChecker() {
+      document.getElementById('checkerCard').classList.remove('hidden');
+      document.getElementById('howItWorks').classList.remove('hidden');
+      document.getElementById('resultSection').classList.add('hidden');
+      document.getElementById('c_pin').value = '';
+      document.getElementById('checker-error').classList.add('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Allow Enter key to submit
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !document.getElementById('checkBtn').disabled) {
+        checkResult();
+      }
+    });
+  </script>
+</body>
+</html>
