@@ -9,7 +9,6 @@ const VALID_CLASSES = [
 ];
 
 // ── GET /api/students ─────────────────────────────────────────
-// Query params: class, search, page, limit
 router.get('/', requireAuth, async (req, res) => {
   const { class: cls, search, page = 1, limit = 50 } = req.query;
   const offset = (Number(page) - 1) * Number(limit);
@@ -82,7 +81,6 @@ router.post('/', requireAuth, async (req, res) => {
   }
 
   try {
-    // Generate a unique student code: STU-YYYY-NNNNN
     const year = new Date().getFullYear();
     const [[{ count }]] = await db.query('SELECT COUNT(*) AS count FROM students');
     const padded        = String(count + 1).padStart(5, '0');
@@ -132,6 +130,29 @@ router.put('/:id', requireAuth, async (req, res) => {
     res.json({ success: true, message: 'Student updated.' });
   } catch (err) {
     console.error('[STUDENTS/PUT]', err.message);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+// ── DELETE /api/students/:id ──────────────────────────────────
+router.delete('/:id', requireAuth, async (req, res) => {
+  try {
+    const [result] = await db.query(
+      'DELETE FROM students WHERE id = ?',
+      [req.params.id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Student not found.' });
+    }
+
+    res.json({ success: true, message: 'Student deleted.' });
+  } catch (err) {
+    console.error('[STUDENTS/DELETE]', err.message);
+    // Foreign key constraint = student has results
+    if (err.code === 'ER_ROW_IS_REFERENCED_2') {
+      return res.status(400).json({ success: false, message: 'Cannot delete student with existing results. Delete their results first.' });
+    }
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });

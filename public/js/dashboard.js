@@ -36,16 +36,13 @@ async function api(method, path, body) {
 
 // ── Page Navigation ───────────────────────────────────────
 function showPage(pageName, btn) {
-  // Update sidebar active
   document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
 
-  // Show/hide sections
   document.querySelectorAll('.page-section').forEach(s => s.classList.add('hidden'));
   const target = document.getElementById('page-' + pageName);
   if (target) { target.classList.remove('hidden'); target.classList.add('animate-in'); }
 
-  // Page-specific init
   if (pageName === 'overview')  loadStats();
   if (pageName === 'students')  loadStudents();
   if (pageName === 'pin-list')  loadPinList();
@@ -116,6 +113,7 @@ async function loadStudents() {
             <td>
               <button class="btn btn-ghost btn-sm" onclick='openEditStudentModal(${JSON.stringify(s)})'>Edit</button>
               <button class="btn btn-ghost btn-sm" onclick="quickEnterResults(${s.id}, '${s.class}', '${s.first_name} ${s.last_name}')">Results</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteStudent(${s.id}, '${s.first_name} ${s.last_name}')">Delete</button>
             </td>
           </tr>
         `).join('')}
@@ -124,6 +122,17 @@ async function loadStudents() {
     <div style="padding:12px 16px; font-size:.78rem; color:var(--text-muted); border-top:1px solid var(--border);">
       Showing ${data.data.length} of ${data.total} students
     </div>`;
+}
+
+// ── Delete Student ────────────────────────────────────────
+async function deleteStudent(id, name) {
+  if (!confirm(`Delete student "${name}"?\n\nThis will also delete all their results and PINs. This cannot be undone.`)) return;
+  const data = await api('DELETE', '/students/' + id);
+  if (data.success) {
+    loadStudents();
+  } else {
+    alert('⚠ ' + data.message);
+  }
 }
 
 // ── Quick jump to results entry for a student
@@ -170,7 +179,7 @@ async function addStudent() {
   }
 }
 
-// Edit student (simple inline modal reuse)
+// Edit student
 function openEditStudentModal(s) {
   document.getElementById('as_first').value  = s.first_name;
   document.getElementById('as_middle').value = s.middle_name || '';
@@ -196,7 +205,6 @@ function openEditStudentModal(s) {
       loadStudents();
       setTimeout(() => {
         closeModal('addStudentModal');
-        // Reset modal
         document.querySelector('#addStudentModal .modal-title').textContent = 'Add New Student';
         btn.textContent = '➕ Add Student';
         btn.onclick = addStudent;
@@ -227,7 +235,7 @@ async function onErClassChange(preSelectId) {
   });
 }
 
-function onErStudentChange() {} // placeholder for future use
+function onErStudentChange() {}
 
 async function loadSubjectsForEntry() {
   const cls     = document.getElementById('er_class').value;
@@ -244,7 +252,6 @@ async function loadSubjectsForEntry() {
   const subjectsData = await api('GET', '/results/subjects?class=' + cls);
   if (!subjectsData.success) { showErMsg('Failed to load subjects.', 'error'); return; }
 
-  // Also try to load existing results
   const existing = await api('GET', `/results?student_id=${stdId}&term=${term}&session=${session}`);
   const existingMap = {};
   (existing.data || []).forEach(r => { existingMap[r.subject_id] = r; });
@@ -336,7 +343,6 @@ async function saveResults() {
 
   if (data.success) {
     showErMsg('✅ ' + data.message, 'success');
-    // Reload to show updated data
     setTimeout(loadSubjectsForEntry, 800);
   } else {
     showErMsg('⚠ ' + data.message, 'error');
@@ -516,8 +522,6 @@ async function loadPinList() {
     </table>`;
 }
 
-// (staff management moved to admin section below)
-
 // ── Modal Helpers ─────────────────────────────────────────
 function openModal(id) {
   document.getElementById(id).classList.add('open');
@@ -527,11 +531,9 @@ function closeModal(id) {
   document.getElementById(id).classList.remove('open');
   document.body.style.overflow = '';
 }
-// Close modal on overlay click
 document.querySelectorAll('.modal-overlay').forEach(o => {
   o.addEventListener('click', e => { if (e.target === o) closeModal(o.id); });
 });
-// ESC key
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(o => closeModal(o.id));
 });
@@ -575,7 +577,6 @@ async function loadSubjects() {
     return;
   }
 
-  // Group by category for the summary count
   const grouped = { all: 0, primary: 0, junior: 0, senior: 0 };
   data.data.forEach(s => { if (grouped[s.category] !== undefined) grouped[s.category]++; });
 
@@ -623,7 +624,6 @@ async function loadSubjects() {
     </div>`;
 }
 
-// ── Open modal to ADD a subject ───────────────────────────────
 function openSubjectModal() {
   document.getElementById('subjectModalTitle').textContent = 'Add Subject';
   document.getElementById('sub_name').value        = '';
@@ -635,7 +635,6 @@ function openSubjectModal() {
   setTimeout(() => document.getElementById('sub_name').focus(), 100);
 }
 
-// ── Open modal to EDIT a subject ──────────────────────────────
 function openEditSubjectModal(subject) {
   document.getElementById('subjectModalTitle').textContent  = 'Edit Subject';
   document.getElementById('sub_name').value      = subject.name;
@@ -647,7 +646,6 @@ function openEditSubjectModal(subject) {
   setTimeout(() => document.getElementById('sub_name').focus(), 100);
 }
 
-// ── Submit (add) ──────────────────────────────────────────────
 async function submitSubjectModal() {
   const name     = document.getElementById('sub_name').value.trim();
   const category = document.getElementById('sub_category').value;
@@ -675,7 +673,6 @@ async function submitSubjectModal() {
   }
 }
 
-// ── Update ────────────────────────────────────────────────────
 async function updateSubject(id) {
   const name     = document.getElementById('sub_name').value.trim();
   const category = document.getElementById('sub_category').value;
@@ -703,7 +700,6 @@ async function updateSubject(id) {
   }
 }
 
-// ── Delete ────────────────────────────────────────────────────
 async function deleteSubject(id, name) {
   const confirmed = confirm(`Delete subject "${name}"?\n\nThis cannot be undone. Subjects with existing results cannot be deleted.`);
   if (!confirmed) return;
@@ -711,7 +707,6 @@ async function deleteSubject(id, name) {
   const data = await api('DELETE', '/subjects/' + id);
 
   if (data.success) {
-    // Animate row out
     const row = document.getElementById('subj-row-' + id);
     if (row) {
       row.style.transition = 'opacity .3s, transform .3s';
@@ -732,9 +727,6 @@ function showSubjectsMsg(text, type) {
   setTimeout(() => { el.innerHTML = ''; }, 4000);
 }
 
-// ── Hook into page navigation ─────────────────────────────────
-const _origShowPage = showPage;
-// Override showPage to trigger loadSubjects when that tab is opened
 const origShowPage = showPage;
 window.showPage = function(pageName, btn) {
   origShowPage(pageName, btn);
@@ -745,10 +737,6 @@ window.showPage = function(pageName, btn) {
 // STAFF MANAGEMENT (ADMIN ONLY)
 // ════════════════════════════════════════════════════════════
 
-/**
- * Show/hide admin-only UI elements based on the logged-in role.
- * Called once on page load.
- */
 function applyRoleUI() {
   if (staff.role === 'admin') {
     document.getElementById('sidebar-staff-section').style.display = '';
@@ -757,7 +745,6 @@ function applyRoleUI() {
 }
 applyRoleUI();
 
-// ── Load staff table ──────────────────────────────────────────
 async function loadStaffList() {
   const wrap = document.getElementById('staffTableWrapper');
   wrap.innerHTML = '<div class="loading-overlay"><span class="spinner"></span> Loading…</div>';
@@ -808,7 +795,6 @@ async function loadStaffList() {
     </div>`;
 }
 
-// ── Open modal to ADD staff ───────────────────────────────────
 function openStaffModal() {
   document.getElementById('staffModalTitle').textContent    = 'Add Staff Member';
   document.getElementById('stf_name').value                = '';
@@ -826,7 +812,6 @@ function openStaffModal() {
   setTimeout(() => document.getElementById('stf_name').focus(), 100);
 }
 
-// ── Open modal to EDIT staff ──────────────────────────────────
 function openEditStaffModal(s) {
   document.getElementById('staffModalTitle').textContent    = 'Edit Staff Member';
   document.getElementById('stf_name').value                = s.name;
@@ -844,7 +829,6 @@ function openEditStaffModal(s) {
   setTimeout(() => document.getElementById('stf_name').focus(), 100);
 }
 
-// ── Create ────────────────────────────────────────────────────
 async function submitCreateStaff() {
   const name     = document.getElementById('stf_name').value.trim();
   const email    = document.getElementById('stf_email').value.trim();
@@ -873,7 +857,6 @@ async function submitCreateStaff() {
   }
 }
 
-// ── Edit ──────────────────────────────────────────────────────
 async function submitEditStaff(id) {
   const name     = document.getElementById('stf_name').value.trim();
   const email    = document.getElementById('stf_email').value.trim();
@@ -904,7 +887,6 @@ async function submitEditStaff(id) {
   }
 }
 
-// ── Delete ────────────────────────────────────────────────────
 async function deleteStaff(id, name) {
   const confirmed = confirm(`Delete staff account for "${name}"?\n\nThis cannot be undone.`);
   if (!confirmed) return;
@@ -931,7 +913,6 @@ function showStaffMsg(text, type) {
   setTimeout(() => { el.innerHTML = ''; }, 4000);
 }
 
-// ── Hook page nav ─────────────────────────────────────────────
 const _showPageBase = window.showPage;
 window.showPage = function(pageName, btn) {
   _showPageBase(pageName, btn);
