@@ -15,6 +15,8 @@ const staffRoutes   = require('./routes/staff');
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
+app.set('trust proxy', 1); // Required for Railway (reverse proxy) — fixes express-rate-limit
+
 // ── Middleware ────────────────────────────────────────────────
 app.use(cors());
 app.use(express.json());
