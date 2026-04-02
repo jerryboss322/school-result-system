@@ -100,6 +100,13 @@ router.delete('/:id', async (req, res) => {
   }
 
   try {
+    // Detach this staff member from any pins they generated before deleting.
+    // This avoids the FK constraint on result_pins.generated_by → staff.id.
+    await db.query(
+      'UPDATE result_pins SET generated_by = NULL WHERE generated_by = ?',
+      [req.params.id]
+    );
+
     const [result] = await db.query('DELETE FROM staff WHERE id = ?', [req.params.id]);
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'Staff member not found.' });
